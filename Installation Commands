@@ -1,0 +1,187 @@
+# DevOps Tools Installation on Ubuntu
+
+## 1. Install Git
+```sh
+sudo apt update
+sudo apt install -y git
+```
+Verify installation:
+```sh
+git --version
+```
+
+---
+## 2. Install Jenkins
+```sh
+sudo apt update
+sudo apt install -y openjdk-11-jdk
+wget -q -O - https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install -y jenkins
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+```
+Verify installation:
+```sh
+sudo systemctl status jenkins
+```
+
+---
+## 3. Install Docker
+```sh
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo tee /etc/apt/keyrings/docker.asc > /dev/null
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+Verify installation:
+```sh
+docker --version
+```
+
+---
+## 4. Install Kubernetes Components (kubectl, Minikube)
+### Install kubectl
+```sh
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+```
+Verify installation:
+```sh
+kubectl version --client
+```
+
+### Install Minikube
+```sh
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+```
+Verify installation:
+```sh
+minikube version
+```
+
+---
+## 5. Install Prometheus
+```sh
+wget https://github.com/prometheus/prometheus/releases/latest/download/prometheus-*.linux-amd64.tar.gz
+tar xvf prometheus-*.linux-amd64.tar.gz
+cd prometheus-*.linux-amd64
+sudo mv prometheus /usr/local/bin/
+```
+Verify installation:
+```sh
+prometheus --version
+```
+
+---
+## 6. Install Grafana
+```sh
+sudo apt update
+sudo apt install -y software-properties-common
+wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee /etc/apt/sources.list.d/grafana.list
+sudo apt update
+sudo apt install -y grafana
+sudo systemctl enable --now grafana-server
+```
+Verify installation:
+```sh
+sudo systemctl status grafana-server
+```
+
+---
+## 7. Install Node Exporter
+```sh
+wget https://github.com/prometheus/node_exporter/releases/latest/download/node_exporter-*.linux-amd64.tar.gz
+tar xvf node_exporter-*.linux-amd64.tar.gz
+cd node_exporter-*.linux-amd64
+sudo mv node_exporter /usr/local/bin/
+sudo useradd -rs /bin/false node_exporter
+sudo tee /etc/systemd/system/node_exporter.service <<EOF
+[Unit]
+Description=Node Exporter
+After=network.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+ExecStart=/usr/local/bin/node_exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl start node_exporter
+sudo systemctl enable node_exporter
+```
+Verify installation:
+```sh
+sudo systemctl status node_exporter
+```
+
+---
+## 8. Install ArgoCD
+```sh
+curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+chmod +x argocd
+sudo mv argocd /usr/local/bin/
+```
+Verify installation:
+```sh
+argocd version
+```
+
+---
+## 9. Install SonarQube
+```sh
+sudo apt update
+sudo apt install -y openjdk-11-jdk unzip
+wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-*.zip
+unzip sonarqube-*.zip
+sudo mv sonarqube-* /opt/sonarqube
+sudo useradd -r -s /bin/false sonarqube
+sudo chown -R sonarqube:sonarqube /opt/sonarqube
+sudo tee /etc/systemd/system/sonarqube.service <<EOF
+[Unit]
+Description=SonarQube service
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=sonarqube
+Group=sonarqube
+ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh console
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+sudo systemctl daemon-reload
+sudo systemctl start sonarqube
+sudo systemctl enable sonarqube
+```
+Verify installation:
+```sh
+sudo systemctl status sonarqube
+```
+
+---
+## 10. Install Terraform
+```sh
+wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update
+sudo apt install -y terraform
+```
+Verify installation:
+```sh
+terraform version
+```
+
